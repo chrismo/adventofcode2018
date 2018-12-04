@@ -1,19 +1,13 @@
 require 'set'
+require 'profile'
 
 class Claim
-  attr_accessor :id, :x, :y, :w, :h
+  attr_reader :id, :all_coords
 
   def initialize(line)
     @id, _ = line.scan(/#(\d+)/).flatten
-    @x, @y = line.scan(/(\d+),(\d+)/).flatten
-    @w, @h = line.scan(/(\d+)x(\d+)/).flatten
-    @x = x.to_i
-    @y = y.to_i
-    @w = w.to_i
-    @h = h.to_i
-  end
-
-  def all_coords
+    x, y = line.scan(/(\d+),(\d+)/).flatten.map(&:to_i)
+    w, h = line.scan(/(\d+)x(\d+)/).flatten.map(&:to_i)
     @all_coords ||= [].tap do |result|
       x.upto(x + (w - 1)) do |coord_x|
         y.upto(y + (h - 1)) do |coord_y|
@@ -66,13 +60,6 @@ class ClaimsCompare
   end
 end
 
-def execute
-  claims = File.readlines("input.txt").map { |ln| Claim.new(ln) }
-  cc = ClaimsCompare.new(claims)
-  p cc.overlapping_sq_inches
-  p cc.non_overlapping_claims.map(&:id)
-end
-
 def assert_equals(a, b)
   raise "Expected <#{a}> to equal <#{b}>" unless a == b
 end
@@ -113,5 +100,12 @@ def diagnostics
 end
 
 diagnostics
+
+def execute
+  claims = File.readlines("input.txt")[0..10].map { |ln| Claim.new(ln) }
+  cc = ClaimsCompare.new(claims)
+  p cc.overlapping_sq_inches
+  p cc.non_overlapping_claims.map(&:id)
+end
 
 execute
