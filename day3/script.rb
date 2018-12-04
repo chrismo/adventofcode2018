@@ -1,60 +1,28 @@
 require 'set'
-# require 'profile'
-
-class Rect
-  attr_reader :x, :y, :w, :h, :left, :top, :right, :bottom
-
-  def self.nil_rect
-    @nil_rect ||= self.new(0, 0, 0, 0)
-  end
-
-  def initialize(x, y, w, h)
-    @x = x
-    @y = y
-    @w = w
-    @h = h
-    @left = x
-    @top = y
-    @right = x + w
-    @bottom = y + h
-  end
-
-  def intersection(other)
-    i_left = [left, other.left].max
-    i_right = [right, other.right].min
-
-    i_top = [top, other.top].max
-    i_bottom = [bottom, other.bottom].min
-
-    return Rect.nil_rect unless i_left < i_right && i_top < i_bottom
-    Rect.new(i_left, i_top, (i_right - i_left), (i_bottom - i_top))
-  end
-
-  def intersects?(other)
-    intersection(other) != Rect.nil_rect
-  end
-
-  def to_s
-    "origin: #{x},#{y} dimensions: #{w}x#{h}"
-  end
-end
+require 'profile'
 
 class Claim
-  attr_reader :id, :rect
+  attr_reader :id, :all_coords
 
   def initialize(line)
     @id, _ = line.scan(/#(\d+)/).flatten
     x, y = line.scan(/(\d+),(\d+)/).flatten.map(&:to_i)
     w, h = line.scan(/(\d+)x(\d+)/).flatten.map(&:to_i)
-    @rect = Rect.new(x, y, w, h)
+    @all_coords ||= [].tap do |result|
+      x.upto(x + (w - 1)) do |coord_x|
+        y.upto(y + (h - 1)) do |coord_y|
+          result << [coord_x, coord_y]
+        end
+      end
+    end
   end
 
   def intersects?(other_claim)
-    intersecting_rect(other_claim) != Rect.nil_rect
+    !intersecting_coords(other_claim).empty?
   end
 
-  def intersecting_rect(other_claim)
-    rect.intersection(other_claim.rect)
+  def intersecting_coords(other_claim)
+    self.all_coords & other_claim.all_coords
   end
 end
 
@@ -74,7 +42,7 @@ class ClaimsCompare
       @claims.each do |b_claim|
         next if a_claim == b_claim
         if a_claim.intersects?(b_claim)
-          @multi_claimed_coords += a_claim.intersecting_rect(b_claim)
+          @multi_claimed_coords += a_claim.intersecting_coords(b_claim)
           @overlapping_claims += [a_claim, b_claim]
         end
       end
@@ -96,19 +64,7 @@ def assert_equals(a, b)
   raise "Expected <#{a}> to equal <#{b}>" unless a == b
 end
 
-def rect_diagnostics
-  assert_equals(Rect.new(0, 0, 1, 1).intersects?(Rect.new(1, 1, 1, 1)), false)
-  assert_equals(Rect.new(0, 0, 2, 1).intersects?(Rect.new(1, 1, 1, 1)), false)
-  assert_equals(Rect.new(0, 0, 2, 2).intersects?(Rect.new(1, 1, 1, 1)), true)
-  assert_equals(Rect.new(0, 0, 4, 4).intersects?(Rect.new(1, 1, 1, 1)), true)
-  assert_equals(Rect.new(1, 1, 1, 1).intersects?(Rect.new(1, 1, 1, 1)), true)
-  assert_equals(Rect.new(1, 1, 2, 2).intersects?(Rect.new(0, 0, 2, 2)), true)
-  assert_equals(Rect.new(4, 4, 2, 2).intersects?(Rect.new(0, 0, 2, 2)), false)
-end
-
 def diagnostics
-  rect_diagnostics
-
   diagnostic_inputs = ['#1 @ 1,3: 4x4',
                        '#2 @ 3,1: 4x4',
                        '#3 @ 5,5: 2x2']
@@ -117,12 +73,14 @@ def diagnostics
   c2 = Claim.new(diagnostic_inputs[1])
   c3 = Claim.new(diagnostic_inputs[2])
 
+  assert_equals(c3.all_coords, [[5, 5], [5, 6], [6, 5], [6, 6]])
   assert_equals(c1.intersects?(c2), true)
   assert_equals(c2.intersects?(c1), true)
   assert_equals(c1.intersects?(c3), false)
   assert_equals(c2.intersects?(c3), false)
 
   cc = ClaimsCompare.new([c1, c2, c3])
+  p [c1.all_coords | c2.all_coords]
   assert_equals(cc.overlapping_sq_inches, 4)
   assert_equals(cc.non_overlapping_claims.map(&:id), ['3'])
 
