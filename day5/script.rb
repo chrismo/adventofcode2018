@@ -5,30 +5,51 @@ def process(input)
   #
   # repeat
 
+  chars = input.chars
   input.downcase.chars.sort.uniq.reverse.each do |scan_for|
     idx = 0
-    while idx < input.length do
-      char = input.chars[idx]
-      next_char = input.chars[idx + 1]
+    chars.compact!
+    while idx < chars.length do
+      char = chars[idx]
+      next_char_idx = get_next_char_idx(chars, idx)
+      next_char = chars[next_char_idx]
       if char && next_char &&
         char.downcase == scan_for &&
         next_char.downcase == scan_for &&
         char != next_char
-        slice_out_chars_at(input, idx)
-        idx -= 2
+        chars[idx] = nil
+        chars[next_char_idx] = nil
+        idx = next_char_idx + 1
       else
         idx += 1
       end
-      puts idx
+      # p({idx: idx, scan_for: scan_for}) if idx.divmod(10000)[1] == 0
     end
   end
-  input
+  chars.compact.join
 end
 
-def slice_out_chars_at(input, index)
-  input.slice!(index..(index + 1))
+def get_next_char_idx(chars, idx)
+  next_idx = idx + 1
+  until chars[next_idx] || next_idx > chars.length
+    next_idx += 1
+  end
+  next_idx
 end
 
 if __FILE__ == $0
-  puts process(File.read('input.txt'))
+  input = File.read('input.txt')
+  iteration = 0
+  loop do
+    output = process(input)
+    if output == input
+      puts "DONE:"
+      puts output
+      break
+    end
+    puts "input length: #{input.length} - output length: #{output.length}"
+    input = output
+    iteration += 1
+    puts "*** ITERATION #{iteration} ***"
+  end
 end
