@@ -1,32 +1,30 @@
 def process(input)
-  # find latest letter first
-  #
-  # scan / remove mismatched pairs
-  #
-  # repeat
-
   chars = input.chars
-  input.downcase.chars.sort.uniq.reverse.each do |scan_for|
-    idx = 0
-    chars.compact!
-    while idx < chars.length do
-      char = chars[idx]
-      next_char_idx = get_next_char_idx(chars, idx)
-      next_char = chars[next_char_idx]
-      if char && next_char &&
-        char.downcase == scan_for &&
-        next_char.downcase == scan_for &&
-        char != next_char
-        chars[idx] = nil
-        chars[next_char_idx] = nil
-        idx = next_char_idx + 1
-      else
-        idx += 1
-      end
-      # p({idx: idx, scan_for: scan_for}) if idx.divmod(10000)[1] == 0
+  idx = 0
+  while idx < chars.length do
+    char = chars[idx]
+    next_char_idx = get_next_char_idx(chars, idx)
+    next_char = chars[next_char_idx]
+    if char && next_char &&
+      char.downcase == next_char.downcase &&
+      char != next_char then
+      chars[idx] = nil
+      chars[next_char_idx] = nil
+      idx = get_prev_char_idx(chars, idx)
+    else
+      idx = get_next_char_idx(chars, idx)
     end
   end
   chars.compact.join
+end
+
+def get_prev_char_idx(chars, idx)
+  return 0 if idx <= 0
+  prev_idx = idx - 1
+  until chars[prev_idx] || prev_idx == 0
+    prev_idx -= 1
+  end
+  prev_idx
 end
 
 def get_next_char_idx(chars, idx)
@@ -38,18 +36,22 @@ def get_next_char_idx(chars, idx)
 end
 
 if __FILE__ == $0
+  puts "Part 1"
   input = File.read('input.txt')
-  iteration = 0
-  loop do
-    output = process(input)
-    if output == input
-      puts "DONE:"
-      puts output
-      break
-    end
-    puts "input length: #{input.length} - output length: #{output.length}"
-    input = output
-    iteration += 1
-    puts "*** ITERATION #{iteration} ***"
+  output = process(input)
+  puts "output length: #{output.length}"
+  puts output
+
+  puts "Part 2"
+  res = {}
+  ('a'..'z').each do |filter_char|
+    print '.'
+    filtered_input = input.dup.gsub(/#{filter_char}/i, "")
+    output = process(filtered_input)
+    res[filter_char] = output
   end
+  puts
+  shortest = res.min_by { |filter_char, out| out.length }
+  p shortest
+  puts shortest.last.length
 end
