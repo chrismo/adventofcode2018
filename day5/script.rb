@@ -2,37 +2,19 @@ def process(input)
   chars = input.chars
   idx = 0
   while idx < chars.length do
+    idx = 0 if idx < 0
     char = chars[idx]
-    next_char_idx = get_next_char_idx(chars, idx)
-    next_char = chars[next_char_idx]
-    if char && next_char &&
-      char.downcase == next_char.downcase &&
-      char != next_char then
+    next_char = chars[idx + 1]
+    if char && next_char && char.downcase == next_char.downcase && char != next_char
       chars[idx] = nil
-      chars[next_char_idx] = nil
-      idx = get_prev_char_idx(chars, idx)
+      chars[idx + 1] = nil
+      chars.compact!
+      idx -= 1
     else
-      idx = get_next_char_idx(chars, idx)
+      idx += 1
     end
   end
-  chars.compact.join
-end
-
-def get_prev_char_idx(chars, idx)
-  return 0 if idx <= 0
-  prev_idx = idx - 1
-  until chars[prev_idx] || prev_idx == 0
-    prev_idx -= 1
-  end
-  prev_idx
-end
-
-def get_next_char_idx(chars, idx)
-  next_idx = idx + 1
-  until chars[next_idx] || next_idx > chars.length
-    next_idx += 1
-  end
-  next_idx
+  chars.join
 end
 
 if __FILE__ == $0
