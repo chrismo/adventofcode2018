@@ -5,4 +5,7 @@ def assert_equals(a, b)
   print '.'
 end
 
-assert_equals(process('2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2'), 138)
+input = '2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2'.split(' ')
+
+assert_equals(Node.new(input.dup).metadata.sum, 138)
+assert_equals(Node.new(input.dup).metadata_as_pointers.flatten.sum, 66)

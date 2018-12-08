@@ -5,15 +5,11 @@
 #   - The quantity of metadata entries.
 # - Zero or more child nodes (as specified in the header).
 # - One or more metadata entries (as specified in the header).
-def process(input)
-  # 2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2
-  # A----------------------------------
-  #     B----------- C-----------
-  #                      D-----
 
-  n = Node.new(input.split(' '))
-  n.metadata.sum
-end
+# 2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2
+# A----------------------------------
+#     B----------- C-----------
+#                      D-----
 
 class Node
   def initialize(input)
@@ -35,15 +31,25 @@ class Node
     (@metadata.dup +
       @children.map(&:metadata)).flatten
   end
+
+  def metadata_as_pointers
+    if @children.empty?
+      metadata
+    else
+      @metadata.map do |child_idx|
+        @children[child_idx - 1]
+      end.compact.map(&:metadata_as_pointers)
+    end
+  end
 end
 
 if __FILE__ == $0
   puts "Part 1"
   input = File.read('input.txt').chomp
-  output = process(input)
-  p output
+  n = Node.new(input.split(' '))
+  p n.metadata.sum
 
-  # puts "Part 2"
-  # output = process(input)
-  # p output
+  puts "Part 2"
+  n = Node.new(input.split(' '))
+  p n.metadata_as_pointers.flatten.sum
 end
